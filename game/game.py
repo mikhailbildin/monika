@@ -1,4 +1,4 @@
-import pygame, sys, os.path, time as TIM
+import pygame, sys, os.path, random, time as TIM
 from pygame import *
 from game.fonts import *
 from game.descript import Descripter
@@ -29,9 +29,9 @@ class Game:
         self.clock = time.Clock()
         self.t = TIM.localtime()
         self.g = 0
-        #self.oksurf = pygame.Surface(self.win_size,SRCALPHA)
-        #self.oksurf.blit(image.load('game/gui/overlay/confirm.png').convert_alpha(),(0,0))
-        #Confirm(self.oksurf,"kek")
+        self.oksurf = pygame.Surface(self.win_size,SRCALPHA)
+        self.oksurf.blit(image.load('game/gui/overlay/confirm.png').convert_alpha(),(0,0))
+        Confirm(self.oksurf,"kek")
         self.menu = 1
         self.sav = []
     def notjustmonika(self,go,zagruzka = 0):
@@ -40,10 +40,10 @@ class Game:
         run = 1
         dspr = '1forma'
         girls = pygame.sprite.Group()
-        Monika = Girl(dspr,m,"Моника",'monika/',x11)
-        Sayori = Girl(dspr,s,"Сайори",'sayori/',x11)
-        Yuri = Girl(dspr,y,"Юри",'yuri/',x11)
-        Natsuki = Girl(dspr,n,"Нацуки",'natsuki/',x11)
+        Monika = Girl(dspr,m,"Моника",'monika/',0)
+        Sayori = Girl(dspr,s,"Сайори",'sayori/',0)
+        Yuri = Girl(dspr,y,"Юри",'yuri/',0)
+        Natsuki = Girl(dspr,n,"Нацуки",'natsuki/',0)
         doki = []
         doki.append(Monika)
         doki.append(Sayori)
@@ -55,19 +55,27 @@ class Game:
             pbg = zagdat[3].rstrip("\n")
             pcg = zagdat[4].rstrip("\n")
             pcge = zagdat[5].rstrip("\n")
-            script = int(zagdat[6].rstrip("\n"))
-            if len(zagdat) != 6:
-                for a in range(7,len(zagdat)):
+            script = zagdat[6].rstrip("\n")
+            Monika.lp = int(zagdat[7][0])
+            Sayori.lp = int(zagdat[7][1])
+            Yuri.lp = int(zagdat[7][2])
+            Natsuki.lp = int(zagdat[7][3])
+            if len(zagdat) != 7:
+                for a in range(8,len(zagdat)):
                     for girl in doki:
                         if zagdat[a][0] == girl.ras[0]:
+                            x = ""
                             spr = ""
-                            pos = ""
-                            for aa in range(1,4):
-                                if zagdat[a][aa] != "%":
-                                    pos += zagdat[a][aa]
-                            for aaa in range(2+len(pos),len(zagdat[a].rstrip("\n"))):
-                                spr += zagdat[a][aaa]
-                            girl.x = int(pos)
+                            for b in range(1,len(zagdat[a])):
+                                if zagdat[a][b] == "-":
+                                    break
+                                else:
+                                    x += zagdat[a][b]
+                            for c in range(len(x)+2,len(zagdat[a].rstrip("\n"))):
+                                spr += zagdat[a][c]
+                            girl.alpha = 255
+                            girl.z = 0.8
+                            girl.x = int(x)
                             girl.spr = spr
                             girl.surf = girl.crspr()
                             girls.add(girl)
@@ -108,7 +116,7 @@ class Game:
         pr_time = TIM.time()
         selok = 1
         p = 0
-        gok = 0
+        gok = -1
         collision = 0
         koef = 1
         skip = image.load('game/gui/skip.png').convert_alpha()
@@ -139,14 +147,13 @@ class Game:
                     mus = 'game/bgm/'+data[1]+'.ogg'
                 go += 1
             elif data[0] == "sound":
-                r = ""
                 ok = 0
                 if sok:
                     snd = mixer.Sound('game/sfx/'+data[1])
                     snd.set_volume(self.gromz)
                     snd.play()
                     sok = 0
-                if tim > snd.get_length():
+                if tim > snd.get_length() or tim > 0.5:
                     go += 1
                     sok = 1
                     tim = 0
@@ -173,29 +180,48 @@ class Game:
             elif data[0] == 'show':
                 ok = 0
                 tim = 0
-                if len(girls) > 0:
-                    for girl in girls:
-                        girl.x = x21
                 for girl in doki:
                     if data[1] == girl.name:
-                        if len(girls) > 0:
-                            girl.x = x22
-                        if data[2] != "":
-                            girl.spr = data[2]
+                        if gok != go:
+                            if girl in girls:
+                                girls.remove(girl)
+                            if data[2][0] == "x":
+                                girl.x = xlist[data[2]]
+                                girl.spr = data[3]
+                            else:
+                                girl.spr = data[2]
                             girl.surf = girl.crspr()
-                        girls.add(girl)
-                go += 1
+                            girls.add(girl)
+                            gok = go
+                        if girl.z < 0.79:
+                            girl.alpha += 150*dt
+                            girl.z += 0.1*dt
+                        elif girl.z > 0.83:
+                            girl.alpha = 255
+                            girl.z = 0.8*1.05
+                            go += 1
+                        else:
+                            girl.alpha = 255
+                            girl.z = 0.8
+                            go += 1
             elif data[0] == 'hide':
                 ok = 0
                 tim = 0
                 for girl in girls:
-                    if girl.name in data[1]:
-                        girl.z = 0.8
-                        girl.x = x11
-                        girls.remove(girl)
-                    else:
-                        girl.x = x11
-                go += 1
+                    if girl.name == data[1] or data[1] == "all":
+                        if girl.z > 0.74 and data[2] == 0:
+                            girl.alpha -= 900*dt
+                            girl.z -= 0.6*dt
+                        else:
+                            girls.remove(girl)
+                            girl.x = 640
+                            girl.z = 0.8*0.95
+                            girl.alpha = 150
+                            if data[1] != "all":
+                                go += 1
+                            else:
+                                if len(girls) == 0:
+                                    go += 1
             elif data[0] == 'choice':
                 ok = 0
                 tim = 0
@@ -204,6 +230,15 @@ class Game:
                 ok = 0
                 tim = 0
                 go = data[1]
+            elif data[0] == 'if':
+                ok = 0
+                tim = 0
+                for girl in doki:
+                    if girl.ras[0] == data[1]:
+                        if girl.lp == data[2]:
+                            go += 1
+                        else:
+                            go += 2
             elif data[0] == 'poem':
                 r = ""
                 ok = 0
@@ -217,14 +252,14 @@ class Game:
                 script = data[1:]
                 go = 0
             else:
-                name = data[0]
-                if rsave == "" and r != data[2]:
+                if gok != go:
+                    name = data[0]
+                    if data[1] != "":
+                        for girl in girls:
+                            if name == girl.name:
+                                girl.spr = data[1]
+                                girl.surf = girl.crspr()
                     r = data[2]
-                if data[1] != "" and gok != go:
-                    for girl in girls:
-                        if name == girl.name:
-                            girl.spr = data[1]
-                            girl.surf = girl.crspr()
                     gok = go
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -238,6 +273,7 @@ class Game:
                     elif event.key == K_ESCAPE:
                         ok = 0
                         tim = 0
+                        lpo = str(Monika.lp)+str(Sayori.lp)+str(Yuri.lp)+str(Natsuki.lp)
                         self.menu = 1
                         self.sav.append(go)
                         self.sav.append(mus)
@@ -245,14 +281,17 @@ class Game:
                         self.sav.append(pcg)
                         self.sav.append(pcge)
                         self.sav.append(script)
+                        self.sav.append(lpo)
                         if len(girls) > 0:
                             for girl in girls:
-                                self.sav.append(str(girl.ras[0])+str(girl.x)+"%"+str(girl.spr))
+                                self.sav.append(str(girl.ras[0])+str(girl.x)+"-"+str(girl.spr))
                         self.main(0,1,1)
                 if mpr[0] and ok and not collision and not poem and r != "":
+                    ok = 0
                     tim = 0
                     go += 1
                 if mpr[0] and poem and not placepoem.collidepoint(mp):
+                    ok = 0
                     tim = 0
                     poem = 0
                     pok = 1
@@ -266,13 +305,13 @@ class Game:
                     if girl.z != 0.9:
                         girl.zoom(0.9,dt)
                 else:
-                    if girl.z != 0.8 and name != "Хикари" and name != "i" and girl.z != 0.8:
+                    if girl.z != 0.8 and name != "Хикари" and name != "i":
                         girl.zoom(0.8,dt)
             girls.update()
             girls.draw(self.win)
             if tim > 1:
                 ok = 1
-                if r == "" and rsave == "" and not choice and not poem:
+                if rsave == "" and data[2] == "" and not choice and not poem:
                     tim = 0
                     if data[0] == "sound":
                         sok = 1
@@ -286,12 +325,15 @@ class Game:
                     tim = 0
                     go += 1
             if keys[K_BACKSPACE] and r == "" and ok and not poem:
+                r = rsave
                 rsave = ""
                 tim = 0.3
+                ok = 0
             elif keys[K_BACKSPACE] and r != "" and ok and not poem:
                 rsave = r
                 r = ""
                 tim = 0.3
+                ok = 0
             if r != '' and not poem:
                 say(self.win,r,name)
                 for i in butg:
@@ -319,6 +361,7 @@ class Game:
                             if i == hist or i == sohr or i == zagr or i == nast:
                                 ok = 0
                                 tim = 0
+                                lpo = str(Monika.lp)+str(Sayori.lp)+str(Yuri.lp)+str(Natsuki.lp)
                                 self.menu = 1
                                 self.sav.append(go)
                                 self.sav.append(mus)
@@ -326,9 +369,10 @@ class Game:
                                 self.sav.append(pcg)
                                 self.sav.append(pcge)
                                 self.sav.append(script)
+                                self.sav.append(lpo)
                                 if len(girls) > 0:
                                     for girl in girls:
-                                        self.sav.append(str(girl.ras[0])+str(girl.x)+"%"+str(girl.spr))
+                                        self.sav.append(str(girl.ras[0])+str(girl.x)+"-"+str(girl.spr))
                                 if i == hist:
                                     self.main(0,1,0,1)
                                 elif i == sohr:
@@ -351,9 +395,9 @@ class Game:
                 else:
                      collision = 0
                 butg.draw(self.win)
-            if keys[K_SPACE] and ok and rsave == "":
-                tim = 0
+            if (keys[K_SPACE] or keys[K_RETURN]) and ok and rsave == "":
                 ok = 0
+                tim = 0
                 go += 1
             if keys[K_LCTRL] and ok:
                 p = 1
@@ -404,6 +448,10 @@ class Game:
                             over.set_volume(self.gromz)
                             over.play()
                         if mpr[0]:
+                            if data[3] != "":
+                                for girl in doki:
+                                    if data[3][buttons.sprites().index(i)] == girl.ras[0]:
+                                        girl.lp += 1
                             select.set_volume(self.gromz)
                             select.play()
                             choice = 0
@@ -577,6 +625,11 @@ class Game:
                 if e.type == QUIT:
                     menurun = 0
                     sys.exit()
+                if self.g:
+                    if e.type == KEYDOWN and e.key == "K_ESCAPE":
+                        time.delay(100)
+                        menurun = 0
+                        self.menu = 0
             self.win.blit(kr,(kx,ky))
             if not self.g:
                 if tim > 0 and bok.rect.x < 0 and tim < 1:
@@ -592,8 +645,8 @@ class Game:
                 if tim > 2:
                     logo.rect.y = -45
             if kx > -100:
-                kx -= 30*dt
-                ky -= 30*dt
+                kx -= 50*dt
+                ky -= 50*dt
             else:
                 kx = 0
                 ky = 0
@@ -617,6 +670,7 @@ class Game:
                         i.image = pygame.image.load("game/saves/"+str(i.number)+".png")
                         i.text = open('game/saves/'+str(i.number), "r").readlines()[0]
                     if i.rect.collidepoint(mp):
+                        i.line(self.win)
                         if mpr[0]:
                             if sohr:
                                 self.t = TIM.localtime()
@@ -697,7 +751,7 @@ class Game:
                             i.col = GREY
                 ss.update()
                 ss.draw(self.win)
-                self.win.blit(fl.render("v0.0.4",1,BLACK),(1230,700))
+                self.win.blit(fl.render("v0.0.6",1,BLACK),(1230,700))
             elif zagr:
                 za.col = colhh
                 obvtext(self.win,30,30, "Загрузить", fbig, 4,col)
@@ -735,7 +789,6 @@ class Game:
                             zagr = 0
                             nazad = 0
                             if i == ex:
-                                menurun = 0
                                 sys.exit()
                         if self.g:
                             if i == gm:
