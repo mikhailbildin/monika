@@ -32,6 +32,8 @@ class Girl(pygame.sprite.Sprite):
                 surf.blit(iii,(0,0))
         return surf
     def update(self):
+        if self.z < 0:
+            self.z = 0.8
         self.image = transform.smoothscale(self.surf, (960*self.z, 960*self.z)).convert_alpha()
         self.rect = self.image.get_rect(center=(self.x,self.y))
         self.image.set_alpha(self.alpha)

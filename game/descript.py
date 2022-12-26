@@ -103,12 +103,17 @@ def Descripter(i,scr):
                 d += data[i][o]
             return 'jump',int(d)
         elif data[i][0] == 'p':
-            return 'poem', int(data[i][2])
+            return 'poem', int(data[i][2]), str(data[i][3])
         elif data[i][0] == 'S':
             d = data[i][2:].rstrip('\n')
             return 'sound',d
+        elif data[i][0] == "F":
+            d = data[i][1:].rstrip('\n')
+            return 'flag',d
         elif data[i][0] == "=":
             return data[i].rstrip('\n')
+        elif data[i][2] == "=":
+            return "lp",str(data[i][0]),str(data[i][1]),int(data[i][3:].rstrip('\n'))
         else:
             if data[i][2] =='"':
                 a = ''

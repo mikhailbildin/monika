@@ -9,6 +9,9 @@ text = font.Font('game/gui/font/GillSansC.otf', 30)
 fn = font.Font('game/gui/font/GillSansC-Bold.otf', 25)
 ft = font.Font('game/gui/font/GillSansT.otf', 26)
 monikafont = font.Font('game/gui/font/m1.ttf', 25)
+yurifont = font.Font('game/gui/font/y1.ttf', 25)
+natsukifont = font.Font('game/gui/font/n1.ttf', 25)
+sayorifont = font.Font('game/gui/font/s1.otf', 25)
 fl = font.Font('game/gui/font/GillSansC.otf', 14)
 fs = font.Font('game/gui/font/GillSansT.otf', 30)
 fbig = font.Font('game/gui/font/GillSansC-Bold.otf', 38)
@@ -44,23 +47,24 @@ class SButton(pygame.sprite.Sprite):
         self.image = w
         self.rect = self.image.get_rect(topleft=(self.nx,self.ny))
 class LButton(pygame.sprite.Sprite):
-    def __init__(self,group,nx,name,ny = 695):
+    def __init__(self,group,nx,name,ny = 695,col = DARK):
         pygame.sprite.Sprite.__init__(self)
         super().__init__(group)
         self.nx = nx
         self.ny = ny
         self.name = name
-        self.col = DARK
+        self.col = col
     def update(self, f = fl):
         w = f.render(self.name,1,self.col)
         self.image = w
         self.rect = self.image.get_rect(center=(self.nx,self.ny))
+        self.rect1 = Rect(self.rect.left - 10, self.rect.top - 10, self.rect.width + 20, self.rect.height + 20)
 def obvtext(win, nx, ny, name, f = fn, x = 3,ocol = BLACK,col = WHITE):
     w = f.render(name,1,BLACK)
     pw = w.get_rect(topleft=(nx-x, ny-x))
     win.blit(border.render(name,f,x,col,ocol),pw)
-def justtext(win,x,y,name,f = ft,col = BLACK):
-    r = f.render(name,1,col)
+def justtext(win,x,y,name,f = ft,col = BLACK,bg = None):
+    r = f.render(name,1,col,bg)
     p = r.get_rect(center=(x,y))
     win.blit(r,p)
 def poemdef(win,zag, tex, f):

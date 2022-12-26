@@ -22,6 +22,7 @@ class Game:
         self.skora = settings.skora
         self.gromm = settings.gromm
         self.gromz = settings.gromz
+        self.lp = settings.lp
         self.win_size = (1280,720)
         self.win = display.set_mode(self.win_size,self.flags)
         display.set_icon(image.load('game/gui/app.png'))
@@ -49,6 +50,7 @@ class Game:
         doki.append(Sayori)
         doki.append(Yuri)
         doki.append(Natsuki)
+        flagg = [0,0,0]
         if zagruzka != 0:
             zagdat = open('game/saves/'+str(zagruzka), "r").readlines()
             mus = zagdat[2].rstrip("\n")
@@ -60,8 +62,10 @@ class Game:
             Sayori.lp = int(zagdat[7][1])
             Yuri.lp = int(zagdat[7][2])
             Natsuki.lp = int(zagdat[7][3])
-            if len(zagdat) != 7:
-                for a in range(8,len(zagdat)):
+            for fla in range(len(zagdat[8].rstrip('\n'))):
+                flagg[fla] = int(zagdat[8][fla])
+            if len(zagdat) != 8:
+                for a in range(9,len(zagdat)):
                     for girl in doki:
                         if zagdat[a][0] == girl.ras[0]:
                             x = ""
@@ -146,17 +150,20 @@ class Game:
                     okm = 1
                     mus = 'game/bgm/'+data[1]+'.ogg'
                 go += 1
+            elif data[0] != "sound" and sok == 0:
+                sok = 1
             elif data[0] == "sound":
                 ok = 0
+                p = 0
                 if sok:
                     snd = mixer.Sound('game/sfx/'+data[1])
                     snd.set_volume(self.gromz)
                     snd.play()
                     sok = 0
                 if tim > snd.get_length() or tim > 0.5:
-                    go += 1
                     sok = 1
                     tim = 0
+                    go += 1
             elif data[0] == 'bg':
                 ok = 0
                 tim = 0
@@ -230,6 +237,17 @@ class Game:
                 ok = 0
                 tim = 0
                 go = data[1]
+            elif data[0] == "flag":
+                ok = 0
+                tim = 0
+                if data[1][0] == "=":
+                    flagg[int(data[1][1])] = 1
+                    go += 1
+                else:
+                    if flagg[int(data[1][0])]:
+                        go += 1
+                    else:
+                        go += 2
             elif data[0] == 'if':
                 ok = 0
                 tim = 0
@@ -245,6 +263,17 @@ class Game:
                 tim = 0
                 poem = 1
                 pn = data[1]
+                pf = data[2]
+            elif data[0] == 'lp':
+                for girl in doki:
+                    if girl.ras[0] == data[1]:
+                        if data[2] == "+":
+                            girl.lp += data[3]
+                        elif data[2] == "-":
+                            girl.lp -= data[3]
+                        else:
+                            girl.lp = data[3]
+                go += 1
             elif data[0] == '=':
                 ok = 0
                 tim = 0
@@ -274,6 +303,9 @@ class Game:
                         ok = 0
                         tim = 0
                         lpo = str(Monika.lp)+str(Sayori.lp)+str(Yuri.lp)+str(Natsuki.lp)
+                        flo = ''
+                        for imo in range(len(flagg)):
+                            flo += str(flagg[imo])
                         self.menu = 1
                         self.sav.append(go)
                         self.sav.append(mus)
@@ -282,6 +314,7 @@ class Game:
                         self.sav.append(pcge)
                         self.sav.append(script)
                         self.sav.append(lpo)
+                        self.sav.append(flo)
                         if len(girls) > 0:
                             for girl in girls:
                                 self.sav.append(str(girl.ras[0])+str(girl.x)+"-"+str(girl.spr))
@@ -362,6 +395,9 @@ class Game:
                                 ok = 0
                                 tim = 0
                                 lpo = str(Monika.lp)+str(Sayori.lp)+str(Yuri.lp)+str(Natsuki.lp)
+                                flo = ''
+                                for imo in range(len(flagg)):
+                                    flo += str(flagg[imo])
                                 self.menu = 1
                                 self.sav.append(go)
                                 self.sav.append(mus)
@@ -370,6 +406,7 @@ class Game:
                                 self.sav.append(pcge)
                                 self.sav.append(script)
                                 self.sav.append(lpo)
+                                self.sav.append(flo)
                                 if len(girls) > 0:
                                     for girl in girls:
                                         self.sav.append(str(girl.ras[0])+str(girl.x)+"-"+str(girl.spr))
@@ -427,7 +464,16 @@ class Game:
                     flip.play()
                     pok = 0
                 self.win.blit(plist,(placepoem))
-                poemdef(self.win,poems[pn][0],poems[pn][1],monikafont)
+                if data[2] == "m":
+                    poemdef(self.win,poems[pn][0],poems[pn][1],monikafont)
+                if data[2] == "s":
+                    poemdef(self.win,poems[pn][0],poems[pn][1],sayorifont)
+                if data[2] == "y":
+                    poemdef(self.win,poems[pn][0],poems[pn][1],yurifont)
+                if data[2] == "n":
+                    poemdef(self.win,poems[pn][0],poems[pn][1],natsukifont)
+                if len(poems[pn][1]) > 18:
+                    self.win.blit(skip,(500,200))
             if choice:
                 tim = 0
                 if not self.ifprop:
@@ -483,7 +529,14 @@ class Game:
             else:
                 koef = 1
                 ctc.x = 1015
+            if self.lp:
+                pygame.draw.rect(self.win,(100,100,100),[850,5,400,25],0,5)
+                justtext(self.win,900,20,"Сайори: "+str(Sayori.lp),fl,WHITE)
+                justtext(self.win,1000,20,"Моника: "+str(Monika.lp),fl,WHITE)
+                justtext(self.win,1100,20,"Юри: "+str(Yuri.lp),fl,WHITE)
+                justtext(self.win,1200,20,"Нацуки: "+str(Natsuki.lp),fl,WHITE)
             #self.win.blit(self.oksurf,(0,0))
+            #Console(self.win,r,sok)
             display.update()
             if not self.menu:
                 tim += dt
@@ -524,11 +577,16 @@ class Game:
         save4 = Box(saves,500,500,4)
         save5 = Box(saves,800,500,5)
         save6 = Box(saves,1100,500,6)
+        stranl = pygame.sprite.Group()
+        for ir in range(9):
+            LButton(stranl,600+ir*50,str(ir+1),650,GREY)
+        stranl.update(text)
         ss = pygame.sprite.Group()
         okon = SButton(ss,205,"Оконный")
         poln = SButton(ss,235,"Полноэкранный")
         newtext = SButton(ss,205,"Новый текст",810)
         propchoice = SButton(ss,235,"После выборов",810)
+        lpyes = SButton(ss,550,"Виджет ЛП")
         ss.update()
         bs = pygame.sprite.Group()
         gs = pygame.sprite.Group()
@@ -579,7 +637,7 @@ class Game:
         selok = 1
         fade = 0
         tim = 0
-        stran = 1
+        stran = "1"
         pr_time = TIM.time()
         while loadrun:
             dt = TIM.time() - pr_time
@@ -662,13 +720,30 @@ class Game:
                     so.col = colhh
                     obvtext(self.win,30,30,"Сохранить",fbig,4,col)
             if zagr or sohr:
-                justtext(self.win,300+980//2,150,'Страница '+str(stran),text)
+                stranl.draw(self.win)
+                justtext(self.win,300+980//2,150,'Страница '+stran,text)
+                for ir in stranl:
+                    if ir.rect1.collidepoint(mp):
+                        if ir.col == GREY:
+                            ir.col = col
+                        if mpr[0]:
+                            stran = ir.name
+                    else:
+                        if ir.name == stran:
+                            ir.col = colb
+                        else:
+                            ir.col = GREY
+                stranl.update(text)
                 saves.draw(self.win)
                 for i in saves:
                     justtext(self.win,i.x,i.y+80,i.text,fl)
-                    if os.path.isfile("game/saves/"+str(i.number)) and os.path.isfile("game/saves/"+str(i.number)+".png"):
-                        i.image = pygame.image.load("game/saves/"+str(i.number)+".png")
-                        i.text = open('game/saves/'+str(i.number), "r").readlines()[0]
+                    if os.path.isfile("game/saves/"+stran+str(i.number)) and os.path.isfile("game/saves/"+stran+str(i.number)+".png"):
+                        i.image = pygame.image.load("game/saves/"+stran+str(i.number)+".png")
+                        i.text = open('game/saves/'+stran+str(i.number), "r").readlines()[0]
+                    else:
+                        i.image = Surface((256,144))
+                        i.image.fill(PINK)
+                        i.text = "пустой слот"
                     if i.rect.collidepoint(mp):
                         i.line(self.win)
                         if mpr[0]:
@@ -676,8 +751,8 @@ class Game:
                                 self.t = TIM.localtime()
                                 i.image = image.fromstring(self.save,(256,144),"RGB")
                                 i.text = str(days[self.t[6]]+", "+months[self.t[1]-1]+" "+str(self.t[2])+" "+str(self.t[0])+", "+("%02d:%02d" % (self.t[3],self.t[4])))
-                                pygame.image.save(i.image,"game/saves/"+str(i.number)+".png")
-                                f = open("game/saves/"+str(i.number),"w+")
+                                pygame.image.save(i.image,"game/saves/"+stran+str(i.number)+".png")
+                                f = open("game/saves/"+stran+str(i.number),"w+")
                                 f.write(i.text+"\n")
                                 for sss in range(len(self.sav)):
                                     f.write(str(self.sav[sss])+"\n")
@@ -687,7 +762,7 @@ class Game:
                                     if selok:
                                         select.play()
                                         selok = 0
-                                    zagruzka = i.number
+                                    zagruzka = int(stran+str(i.number))
                                     fade = 1
             if setting:
                 se.col = colhh
@@ -696,6 +771,7 @@ class Game:
                 obvtext(self.win, 800, 165, "Пропуск", fs,2,col)
                 obvtext(self.win, 420, 290, "Скорость текста", fs,2,col)
                 obvtext(self.win, 420, 400, "Скорость автопрокрутки", fs,2,col)
+                obvtext(self.win, 420, 500, "Дополнительно", fs,2,col)
                 obvtext(self.win, 800, 290, "Громкость звуков", fs,2,col)
                 obvtext(self.win, 800, 400, "Громкость музыки", fs,2,col)
                 if self.flags == DOUBLEBUF:
@@ -706,6 +782,8 @@ class Game:
                     self.win.blit(check,(780,230))
                 if self.ifnewtext:
                     self.win.blit(check,(780,200))
+                if self.lp:
+                    self.win.blit(check,(420,545))
                 self.win.blit(line,(420,350))
                 self.win.blit(line,(420,450))
                 self.win.blit(line,(800,350))
@@ -732,6 +810,12 @@ class Game:
                             elif i == poln and self.flags == DOUBLEBUF:
                                 self.flags = FULLSCREEN | DOUBLEBUF
                                 self.win = display.set_mode(self.win_size,self.flags)
+                            if i == lpyes and tim > 2.3:
+                                if self.lp:
+                                    self.lp = 0
+                                else:
+                                    self.lp = 1
+                                tim = 2
                             if i == propchoice and tim > 2.3:
                                 if self.ifprop:
                                     self.ifprop = 0
@@ -745,7 +829,7 @@ class Game:
                                     self.ifnewtext = 1
                                 tim = 2
                     else:
-                        if (i == okon and self.flags == DOUBLEBUF) or (i == poln and self.flags != DOUBLEBUF) or (i == propchoice and self.ifprop) or (i == newtext and self.ifnewtext):
+                        if (i == okon and self.flags == DOUBLEBUF) or (i == poln and self.flags != DOUBLEBUF) or (i == propchoice and self.ifprop) or (i == newtext and self.ifnewtext) or (i == lpyes and self.lp):
                             i.col = colb
                         else:
                             i.col = GREY
@@ -828,6 +912,7 @@ class Game:
                         f.write('\nskora = '+str(self.skora))
                         f.write('\ngromz = '+str(self.gromz))
                         f.write('\ngromm = '+str(self.gromm))
+                        f.write('\nlp = '+str(self.lp))
                         f.close()
                     else:
                         selok = 1
